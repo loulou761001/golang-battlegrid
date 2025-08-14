@@ -1,8 +1,8 @@
 package gamelogic
 
 import (
-	"battle-sim/state"
-	"battle-sim/types"
+	"battle-sim/internal/state"
+	"battle-sim/internal/types"
 	"math"
 	"math/rand"
 )

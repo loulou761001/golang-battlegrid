@@ -1,7 +1,7 @@
 package state
 
 import (
-	"battle-sim/types"
+	"battle-sim/internal/types"
 )
 
 var Cursor = types.CursorPos{}

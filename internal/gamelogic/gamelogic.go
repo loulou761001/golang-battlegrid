@@ -1,8 +1,9 @@
 package gamelogic
 
 import (
-	"battle-sim/state"
-	"battle-sim/types"
+	"battle-sim/assets"
+	"battle-sim/internal/state"
+	"battle-sim/internal/types"
 	"math/rand/v2"
 )
 
@@ -40,9 +41,9 @@ func GenerateBattlefield() [][]string {
 		for _, unit := range unitsOnLine {
 			var symbolToDisplay string
 			if unit.Team == 1 {
-				symbolToDisplay = "\033[32m" + unit.UnitType.Symbol + "\033[0m"
+				symbolToDisplay = assets.GreenText + unit.UnitType.Symbol + assets.ResetText
 			} else {
-				symbolToDisplay = "\033[31m" + unit.UnitType.Symbol + "\033[0m"
+				symbolToDisplay = assets.RedText + unit.UnitType.Symbol + assets.ResetText
 
 			}
 			line[unit.X] = symbolToDisplay
@@ -113,9 +114,9 @@ func checkWinner() {
 		}
 	}
 	if remainingTeam1Units == 0 {
-		state.WinningTeam = 1
-	} else if remainingTeam2Units == 0 {
 		state.WinningTeam = 2
+	} else if remainingTeam2Units == 0 {
+		state.WinningTeam = 1
 	}
 }
 

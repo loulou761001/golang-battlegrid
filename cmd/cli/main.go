@@ -1,8 +1,8 @@
 package main
 
 import (
-	"battle-sim/gamelogic"
-	"battle-sim/ui"
+	"battle-sim/internal/gamelogic"
+	"battle-sim/internal/ui"
 	"log"
 
 	"github.com/jroimartin/gocui"

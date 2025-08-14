@@ -2,9 +2,9 @@ package ui
 
 import (
 	"battle-sim/assets"
-	"battle-sim/gamelogic"
-	"battle-sim/state"
-	"battle-sim/types"
+	"battle-sim/internal/gamelogic"
+	"battle-sim/internal/state"
+	"battle-sim/internal/types"
 	"fmt"
 	"strconv"
 
@@ -14,9 +14,9 @@ import (
 func getUnitName(unit types.Unit) string {
 	var nameToPrint string
 	if unit.Team == 1 {
-		nameToPrint = "\033[32m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + "\033[0m"
+		nameToPrint = "\033[32m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + assets.ResetText
 	} else {
-		nameToPrint = "\033[31m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + "\033[0m"
+		nameToPrint = "\033[31m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + assets.ResetText
 	}
 	return nameToPrint
 }
@@ -26,7 +26,7 @@ func printBattlefield(v *gocui.View) {
 		for x, cell := range line {
 			var cellToPrint string
 			if len(cell) == 0 {
-				cellToPrint = " "
+				cellToPrint = "#"
 			} else {
 				cellToPrint = cell
 			}
