@@ -4,7 +4,6 @@ import (
 	"battle-sim/internal/state"
 	"battle-sim/internal/types"
 	"math"
-	"math/rand"
 )
 
 func moveUnitTowardsClosest(unit *types.Unit) bool {
@@ -36,7 +35,7 @@ func moveUnitTowardsClosest(unit *types.Unit) bool {
 	newY := unit.Y + moveY
 
 	for _, other := range state.Units {
-		if other.Id != unit.Id && other.X == newX && other.Y == newY {
+		if other.Id != unit.Id && other.X == newX && other.Y == newY && IsUnitAlive(&other) {
 			return false // mouvement annulé
 		}
 	}
@@ -65,29 +64,24 @@ func checkEnemiesInRange(unit *types.Unit) []*types.Unit {
 
 func pickTarget(targets []*types.Unit) *types.Unit {
 	unitTypeWeights := map[string]int{
-		"cavalry":  2,
-		"infantry": 1,
-		"archer":   1,
+		"cavalry":  3,
+		"infantry": 2,
+		"archer":   2,
 	}
 
-	// Calcul du poids total de toutes les cibles
-	totalWeight := 0
+	var target *types.Unit
+	var highestScore = 0
+	// Sélectionne l'ennemi ayant reçu le plus haut score (d6 * poids)
 	for _, enemy := range targets {
-		totalWeight += unitTypeWeights[enemy.UnitType.Name]
-	}
-	if totalWeight == 0 {
-		return targets[0]
-	}
-	// Tirage aléatoire pondéré
-	randomRoll := rand.Intn(totalWeight)
-	cumulativeWeight := 0
-	for _, enemy := range targets {
-		cumulativeWeight += unitTypeWeights[enemy.UnitType.Name]
-		if randomRoll < cumulativeWeight {
-			return enemy
+		weight, ok := unitTypeWeights[enemy.UnitType.Name]
+		if !ok {
+			weight = 2 // valeur par défaut si type inconnu
+		}
+		enemyScore := throwDice(6) * weight
+		if enemyScore > highestScore {
+			highestScore = enemyScore
+			target = enemy
 		}
 	}
-
-	// Fallback (ne devrait pas arriver)
-	return targets[0]
+	return target
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"battle-sim/internal/gamelogic"
 	"battle-sim/internal/ui"
 	"log"
 
@@ -9,10 +8,10 @@ import (
 )
 
 func main() {
-	gamelogic.GenerateBattlefield()
 
+	//gamelogic.GenerateDefaultBattlefield()
+	//ui.PrintGui()
 	if err := ui.PrintGui(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
-
 }

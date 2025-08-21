@@ -5,8 +5,9 @@ import (
 )
 
 var Cursor = types.CursorPos{}
-var Battlefield [][]string
+
 var BattlefieldSize = [2]int{32, 24}
+
 var CurrentTurn = map[string]int{
 	"activePlayer": 1,
 	"number":       1,

@@ -19,3 +19,7 @@ const (
 	BlueText  = "\033[34m"
 	RedText   = "\033[31m"
 )
+
+const (
+	GrassTexture = "▒▒▒"
+)

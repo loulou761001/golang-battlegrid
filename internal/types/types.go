@@ -2,6 +2,10 @@ package types
 
 import "battle-sim/assets"
 
+type Tile struct {
+	Terrain string // "grass", "dirt", etc.
+}
+
 type Stats struct {
 	Attack      int
 	Health      int

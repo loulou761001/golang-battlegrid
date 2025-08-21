@@ -1,7 +1,6 @@
 package gamelogic
 
 import (
-	"battle-sim/assets"
 	"battle-sim/internal/state"
 	"battle-sim/internal/types"
 	"math/rand/v2"
@@ -17,6 +16,17 @@ func IsUnitAlly(unit, other *types.Unit) bool {
 
 // GAME GENERATION ---
 
+//func GenerateDefaultBattlefield() {
+//	for y := range state.Battlefield {
+//		state.Battlefield[y] = make([]types.Tile, state.BattlefieldSize[0])
+//		for x := range state.Battlefield[y] {
+//			state.Battlefield[y][x] = types.Tile{
+//				Terrain: "grass",
+//			}
+//		}
+//	}
+//}
+
 func findUnitsOnLine(y int) []types.Unit {
 	var result []types.Unit
 	var livingUnits []types.Unit
@@ -31,27 +41,6 @@ func findUnitsOnLine(y int) []types.Unit {
 		}
 	}
 	return result
-}
-
-func GenerateBattlefield() [][]string {
-	lines := make([][]string, 0, state.BattlefieldSize[1])
-	for currentLine := 0; currentLine < state.BattlefieldSize[1]; currentLine++ {
-		line := make([]string, state.BattlefieldSize[0])
-		var unitsOnLine = findUnitsOnLine(currentLine)
-		for _, unit := range unitsOnLine {
-			var symbolToDisplay string
-			if unit.Team == 1 {
-				symbolToDisplay = assets.GreenText + unit.UnitType.Symbol + assets.ResetText
-			} else {
-				symbolToDisplay = assets.RedText + unit.UnitType.Symbol + assets.ResetText
-
-			}
-			line[unit.X] = symbolToDisplay
-		}
-		lines = append(lines, line)
-	}
-	state.Battlefield = lines
-	return lines
 }
 
 // ---
@@ -139,14 +128,13 @@ func EndTurn() {
 		}
 	}
 	changeTurn()
-	GenerateBattlefield()
 }
 
 // ---
 
 func MoveCursor(moveX, moveY int) {
-	maxY := len(state.Battlefield)
-	maxX := len(state.Battlefield[0])
+	maxY := state.BattlefieldSize[1]
+	maxX := state.BattlefieldSize[0]
 	if state.Cursor.X+moveX >= 0 && state.Cursor.X+moveX < maxX {
 		state.Cursor.X += moveX
 	}

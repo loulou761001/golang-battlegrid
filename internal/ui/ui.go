@@ -6,107 +6,94 @@ import (
 	"battle-sim/internal/state"
 	"battle-sim/internal/types"
 	"fmt"
-	"strconv"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
 
+var battlefield [][]types.Tile
+var renderBuffer [][]string
+var unitLookup map[[2]int]*types.Unit // O(1) unit lookup
+
 func getUnitName(unit types.Unit) string {
 	var nameToPrint string
 	if unit.Team == 1 {
-		nameToPrint = "\033[32m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + assets.ResetText
+		nameToPrint = assets.GreenText + "[" + unit.UnitType.Symbol + "]" + unit.UnitType.Name + assets.ResetText
 	} else {
-		nameToPrint = "\033[31m[" + unit.UnitType.Symbol + "] " + unit.UnitType.Name + assets.ResetText
+		nameToPrint = assets.RedText + "[" + unit.UnitType.Symbol + "]" + unit.UnitType.Name + assets.ResetText
 	}
 	return nameToPrint
 }
 
-func printBattlefield(v *gocui.View) {
-	for y, line := range state.Battlefield {
-		for x, cell := range line {
-			var cellToPrint string
-			if len(cell) == 0 {
-				cellToPrint = "#"
-			} else {
-				cellToPrint = cell
-			}
-			if x == state.Cursor.X && y == state.Cursor.Y {
-				// Curseur : fond blanc et texte noir
-				fmt.Fprint(v, "\033[47;30m["+cellToPrint+"]\033[0m")
-			} else {
-				fmt.Fprint(v, "["+cellToPrint+"]")
-			}
+func initBattlefield() {
+	battlefield = make([][]types.Tile, state.BattlefieldSize[1])
+	renderBuffer = make([][]string, state.BattlefieldSize[1])
+
+	// Fill battlefield with default terrain
+	for y := range battlefield {
+		battlefield[y] = make([]types.Tile, state.BattlefieldSize[0])
+		renderBuffer[y] = make([]string, state.BattlefieldSize[0])
+		for x := range battlefield[y] {
+			battlefield[y][x].Terrain = "grass" // default terrain
+			renderBuffer[y][x] = ""             // empty buffer so everything draws first time
 		}
-		fmt.Fprintln(v)
 	}
-	fmt.Fprint(v, strconv.Itoa(state.Cursor.X)+", "+strconv.Itoa(state.Cursor.Y))
-	fmt.Fprint(v, " Current player: "+strconv.Itoa(state.CurrentTurn["activePlayer"])+", current turn: "+strconv.Itoa(state.CurrentTurn["number"]))
 }
 
-func printUnitInfo(v *gocui.View) {
-	var hoveredUnit types.Unit
-
-	found := false
-
-	for _, unit := range state.Units {
-		if unit.X == state.Cursor.X && unit.Y == state.Cursor.Y && gamelogic.IsUnitAlive(&unit) {
-			hoveredUnit = unit
-			found = true
-			break
+func buildUnitLookup() {
+	unitLookup = make(map[[2]int]*types.Unit, len(state.Units))
+	for i := range state.Units {
+		unit := &state.Units[i]
+		if gamelogic.IsUnitAlive(unit) {
+			unitLookup[[2]int{unit.X, unit.Y}] = unit
 		}
 	}
-	if found {
-		var nameToPrint = getUnitName(hoveredUnit)
-		linesToPrint := []string{
-			nameToPrint,
-			"ATK: " + strconv.Itoa(hoveredUnit.UnitType.Stats.Attack),
-			"DEF: " + strconv.Itoa(hoveredUnit.UnitType.Stats.Defense),
-			"HP: " + strconv.Itoa(hoveredUnit.UnitType.Stats.Health-hoveredUnit.DamageTaken) + "/" + strconv.Itoa(hoveredUnit.UnitType.Stats.Health),
-		}
-		for _, line := range linesToPrint {
-			fmt.Fprintln(v, line)
-		}
-	} else {
-		fmt.Fprint(v, "Aucune unité à cette position")
-	}
-
 }
 
-func printCombatInfo(v *gocui.View) {
-	if state.WinningTeam != 0 {
-		str := fmt.Sprintf("Victory for team %d!", state.WinningTeam)
-		fmt.Fprintln(v, str)
-		return
+func getCellRender(x, y int) string {
+	// Check if unit is here
+	if unit, ok := unitLookup[[2]int{x, y}]; ok {
+		if unit.Team == 1 {
+			return assets.GreenText + "[" + unit.UnitType.Symbol + "]" + assets.ResetText
+		}
+		return assets.RedText + "[" + unit.UnitType.Symbol + "]" + assets.ResetText
 	}
 
-	if state.LastCombatResult == nil || len(state.LastCombatResult) == 0 {
-		fmt.Fprintln(v, assets.GameLogo)
-		return
-	}
-	for _, result := range state.LastCombatResult {
-		attackerName := getUnitName(*result.Attacker)
-		targetName := getUnitName(*result.Target)
-		str := fmt.Sprintf("%s attacked %s, %d damage dealt.", attackerName, targetName, result.DamageDealt)
-		fmt.Fprintln(v, str)
+	// Otherwise, terrain
+	switch battlefield[y][x].Terrain {
+	case "grass":
+		return assets.GrassTexture
+	default:
+		return assets.GrassTexture
 	}
 }
 
 func drawBattlefield(v *gocui.View) {
 	v.Clear()
-	printBattlefield(v)
-}
+	buildUnitLookup() // Update unit positions for this frame
 
-func drawUnitInfo(v *gocui.View) {
-	v.Clear()
-	printUnitInfo(v)
-}
+	for y := 0; y < state.BattlefieldSize[1]; y++ {
+		var row strings.Builder
+		for x := 0; x < state.BattlefieldSize[0]; x++ {
+			cell := getCellRender(x, y)
+			if renderBuffer[y][x] != cell {
+				renderBuffer[y][x] = cell
+			}
+			row.WriteString(cell)
+		}
+		fmt.Fprintln(v, row.String())
+	}
 
-func drawCombatInfo(v *gocui.View) {
-	v.Clear()
-	printCombatInfo(v)
+	// Print status line
+	fmt.Fprintf(v, "%d, %d Current player: %d, current turn: %d",
+		state.Cursor.X, state.Cursor.Y,
+		state.CurrentTurn["activePlayer"],
+		state.CurrentTurn["number"],
+	)
 }
 
 func PrintGui() error {
+	initBattlefield()
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		return err
@@ -116,6 +103,7 @@ func PrintGui() error {
 	g.SetManagerFunc(func(g *gocui.Gui) error {
 		maxX, maxY := g.Size()
 		combatHeight := 8
+
 		battleView, _ := g.SetView("battlefield", 0, 0, maxX-1, maxY-combatHeight-1)
 		combatView, _ := g.SetView("combatView", 0, maxY-combatHeight, maxX-1, maxY-1)
 		infoView, _ := g.SetView("unitInfo", maxX-36, 0, maxX-1, 8)
@@ -126,8 +114,6 @@ func PrintGui() error {
 		return nil
 	})
 
-	// Définir les keybindings ici (Ctrl+C + flèches)
 	gamelogic.SetControls(g)
-
 	return g.MainLoop()
 }
